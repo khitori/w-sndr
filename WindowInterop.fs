@@ -22,6 +22,7 @@ type ShowWindowCmd =
     | ShowNormal = 1
     | Minimize = 6
     | Restore = 9
+    | Maximize = 3
 
 type EnumWindowsProc = delegate of IntPtr * IntPtr -> bool
 
@@ -46,6 +47,14 @@ extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool 
 [<DllImport("user32.dll")>]
 extern bool ShowWindow(IntPtr hWnd, ShowWindowCmd nCmdShow)
 
+[<DllImport("user32.dll")>]
+extern IntPtr GetForegroundWindow()
+
+[<DllImport("user32.dll")>]
+extern bool IsZoomed(IntPtr hWnd)
+
+let isWindowMaximized hWnd = IsZoomed(hWnd)
+
 let getAllWindows () =
     let results = ResizeArray()
 
@@ -67,6 +76,9 @@ let moveWindow hWnd (x, y, w, h) =
 
 let minimizeWindow hWnd =
     ShowWindow(hWnd, ShowWindowCmd.Minimize) |> ignore
+
+let maximizeWindow hWnd =
+    ShowWindow(hWnd, ShowWindowCmd.ShowNormal) |> ignore
 
 let restoreWindow hWnd =
     ShowWindow(hWnd, ShowWindowCmd.Restore) |> ignore
@@ -110,7 +122,7 @@ let getCursorMonitor () =
     else
         IntPtr.Zero
 
-let getWindowMonitor (hWnd: nativeint) = MonitorFromWindow(hWnd, 2u) // MONITOR_DEFAULTTONEAREST
+let getWindowMonitor (hWnd: nativeint) = MonitorFromWindow(hWnd, 2u)
 
 let isPrimaryMonitor (hMonitor: nativeint) =
     let mutable mi = MONITORINFO(cbSize = uint32 (Marshal.SizeOf<MONITORINFO>()))
@@ -139,7 +151,27 @@ let getMonitorResolutionAndWorkArea (hMonitor: nativeint) =
     else
         (0, 0), (0, 0)
 
+let getMonitorPosition (hMonitor: nativeint) =
+    let mutable mi = MONITORINFO(cbSize = uint32 (Marshal.SizeOf<MONITORINFO>()))
+
+    if GetMonitorInfo(hMonitor, &mi) then
+        mi.rcMonitor.Left, mi.rcMonitor.Top
+    else
+        0, 0
+
+
 let getWindowMonitorResolutionAndWorkArea (hWnd: nativeint) =
-    let MONITOR_DEFAULTTONEAREST = 2u
-    let hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST)
+    let hMonitor = getWindowMonitor hWnd
     getMonitorResolutionAndWorkArea hMonitor
+
+let isWindowFocused (hWnd: IntPtr) = GetForegroundWindow() = hWnd
+
+let getWindowSizePos (hWnd: nativeint) =
+    let mutable rect = RECT()
+
+    if GetWindowRect(hWnd, &rect) then
+        let width = rect.Right - rect.Left
+        let height = rect.Bottom - rect.Top
+        Some(rect.Left, rect.Top, width, height)
+    else
+        None

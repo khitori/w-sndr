@@ -12,25 +12,53 @@ let hotkeyUseEvent () =
     let isPrimary = isPrimaryMonitor cursorMon
     printfn "Cursor on %s monitor" (if isPrimary then "main" else "other")
 
-    let primaryWins = ResizeArray()
     let windows = getAllWindows ()
 
     windows
     |> Array.iter (fun (hWnd, _) ->
-        if isWindowOnPrimaryMonitor hWnd then
-            primaryWins.Add hWnd
-            printfn "win on primary"
-        else
-            printfn "win on other")
+        if isWindowFocused hWnd then
+            let winW, winH =
+                match getWindowSizePos hWnd with
+                | Some(_, _, w, h) -> w, h
+                | None -> 0, 0
 
-    match primaryWins.Count with
-    | 1 -> 
-    | 2 ->
-    | 3 ->
-    | 4 ->
-    | 5 ->
-    | 6 ->
+            let hMonitor = getWindowMonitor hWnd
+            let x, y = getMonitorPosition hMonitor
+            let (rwW, rwH), (resW, resH) = getWindowMonitorResolutionAndWorkArea hWnd
 
+            // if (winW, winH) = (resW, resH) || isWindowMaximized hWnd then
+            //     moveWindow hWnd (x, y, winW / 2, winH / 2)
+            //     printfn "-size"
+            // else
+            //     moveWindow hWnd (x, y, resW, resH)
+            //     printfn "+size")
+
+            if isWindowMaximized hWnd then
+                restoreWindow hWnd
+            else
+                maximizeWindow hWnd)
+
+
+// match primaryWins.Count with
+// | 1 ->
+// | 2 ->
+// | 3 ->
+// | 4 ->
+// | 5 ->
+// | 6 ->
+
+// let (resolution, _) = getMonitorResolutionAndWorkArea hMonitor
+// let (_, _, windowResW, windowResH) = getWindowSizePos hWnd
+
+// setWindowResOnly hWnd (w, h) = match getWindowSizePos hWnd with
+//     | Some(x, y, _, _) -> moveWindow hWnd (x, y, w, h)
+//     | None -> ()
+
+
+
+// primaryWins |> Array.iter (fun (hWnd) ->
+//     if isWindowFocused hWnd && not resolution = (windowResW, windowResH)
+//         setWindowResOnly hWnd (resolution))
 
 
 
